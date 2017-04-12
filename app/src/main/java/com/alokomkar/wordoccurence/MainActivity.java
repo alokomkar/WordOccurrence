@@ -111,11 +111,12 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader br = new BufferedReader(isr);
                     String line;
                     while ((line = br.readLine()) != null) {
-                        Log.d(TAG, "Reading line : " + line);
-                        calculateWordCount( line );
+                        calculateWordCount( line.trim() );
                     }
                     if( wordCountMap.size() > 0 ) {
+
                         wordCountMap = FileUtils.sortByValue(wordCountMap);
+                        Log.d(TAG, "Word Count Sorted : " + wordCountMap);
                         setupRecyclerView();
                     }
                 }
@@ -159,15 +160,25 @@ public class MainActivity extends AppCompatActivity {
     private void calculateWordCount( String sentence ) {
 
         String[] keyArray = sentence.split(" ");
+        String completeSentence = sentence;
         for( String key : keyArray ) {
             int count = 0;
             while(sentence.contains(key)){
                 count++;
-                sentence = sentence.substring(sentence.indexOf(key)+key.length());
+                sentence = sentence.substring(sentence.indexOf(key) + key.length());
             }
             if( count != 0 ) {
-                wordCountMap.put(key, new WordModel(key, count));
+                if( wordCountMap.containsKey(key) ) {
+                    WordModel wordModel = wordCountMap.get(key);
+                    wordModel.setWordCount(wordModel.getWordCount() + count);
+                    wordCountMap.put(key, wordModel);
+                }
+                else {
+                    wordCountMap.put(key, new WordModel(key, count));
+                }
+
             }
+            sentence = completeSentence;
         }
     }
 }
