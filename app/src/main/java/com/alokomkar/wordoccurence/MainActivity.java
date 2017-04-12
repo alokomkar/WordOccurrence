@@ -23,15 +23,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
     private RecyclerView occurenceRecyclerView;
     private int REQUEST_CODE_SEARCH = 1000;
     private String TAG = MainActivity.class.getSimpleName();
-    private Map<String, WordModel> wordCountMap;
+    private HashMap<String, WordModel> wordCountMap;
     private ProgressDialog progressDialog;
 
     @Override
@@ -110,9 +115,11 @@ public class MainActivity extends AppCompatActivity {
                     InputStreamReader isr = new InputStreamReader(fis, Charset.forName("UTF-8"));
                     BufferedReader br = new BufferedReader(isr);
                     String line;
+                    String completeLine = "";
                     while ((line = br.readLine()) != null) {
-                        calculateWordCount( line.trim() );
+                        completeLine += line.trim() + " ";
                     }
+                    calculateWordCount( completeLine );
                     if( wordCountMap.size() > 0 ) {
 
                         wordCountMap = FileUtils.sortByValue(wordCountMap);
@@ -159,26 +166,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void calculateWordCount( String sentence ) {
 
-        String[] keyArray = sentence.split(" ");
         String completeSentence = sentence;
-        for( String key : keyArray ) {
-            int count = 0;
-            while(sentence.contains(key)){
-                count++;
-                sentence = sentence.substring(sentence.indexOf(key) + key.length());
-            }
-            if( count != 0 ) {
-                if( wordCountMap.containsKey(key) ) {
-                    WordModel wordModel = wordCountMap.get(key);
-                    wordModel.setWordCount(wordModel.getWordCount() + count);
-                    wordCountMap.put(key, wordModel);
-                }
-                else {
-                    wordCountMap.put(key, new WordModel(key, count));
-                }
-
-            }
-            sentence = completeSentence;
+        List<String> list = Arrays.asList(completeSentence.split(" "));
+        Set<String> uniqueWords = new HashSet<String>(list);
+        for (String word : uniqueWords) {
+            wordCountMap.put(word, new WordModel(word, Collections.frequency(list, word)));
+            Log.d(TAG, "Collections : " + word + ": " + Collections.frequency(list, word));
         }
     }
 }

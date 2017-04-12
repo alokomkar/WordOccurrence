@@ -17,6 +17,7 @@ public class OccurrenceRecyclerAdapter extends RecyclerView.Adapter<OccurrenceRe
     private Map<String, WordModel> wordCountMap;
     private String header = "";
     private ArrayList<WordModel> wordModelArrayList;
+    private String prevHeader = "";
 
     public OccurrenceRecyclerAdapter(Map<String, WordModel> wordCountMap) {
         this.wordModelArrayList = new ArrayList<>();
@@ -33,14 +34,34 @@ public class OccurrenceRecyclerAdapter extends RecyclerView.Adapter<OccurrenceRe
     public void onBindViewHolder(ViewHolder holder, int position) {
 
         WordModel wordModel = wordModelArrayList.get(position);
-        if( header.equals("") ) {
+        int wordCount = wordModel.getWordCount();
+        if( wordCount <= 10 ) {
             holder.headerTextView.setText("0 - 10");
-            header = holder.headerTextView.getText().toString();
+            header = "0 - 10";
         }
-        else {
-            holder.headerTextView.setVisibility(header.equals(holder.headerTextView.getText().toString()) ? View.GONE : View.VISIBLE);
+        else if( wordCount > 10 && wordCount <= 20 ) {
+            holder.headerTextView.setText("10 - 20");
+            header = "10 - 20";
         }
+        else if( wordCount > 20 ) {
+            holder.headerTextView.setText("20 and above");
+            header = "20 and above";
+        }
+        if( prevHeader.equals("") ) {
+            prevHeader = header;
+            holder.headerTextView.setVisibility(View.VISIBLE);
+        }
+        else if( prevHeader.equals(header) ) {
+            holder.headerTextView.setVisibility(View.GONE);
+        }
+        else if( !prevHeader.equals(header) ) {
+            prevHeader = header;
+            holder.headerTextView.setVisibility(View.VISIBLE);
+        }
+
         holder.contentTextView.setText(wordModel.toString());
+
+
 
     }
 

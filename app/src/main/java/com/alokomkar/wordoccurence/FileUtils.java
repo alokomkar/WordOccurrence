@@ -16,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -130,7 +131,7 @@ public class FileUtils {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
 
-    public static <K, V extends Comparable<? super V>> Map<K, V>  sortByValue( Map<K, V> map )
+    public static <K, V extends Comparable<? super V>> HashMap<K, V>  sortByValue( HashMap<K, V> map )
     {
         List<Map.Entry<K, V>> list = new LinkedList<>( map.entrySet() );
         Collections.sort( list, new Comparator<Map.Entry<K, V>>()
@@ -141,7 +142,7 @@ public class FileUtils {
             }
         } );
 
-        Map<K, V> result = new LinkedHashMap<K, V>();
+        HashMap<K, V> result = new LinkedHashMap<K, V>();
         for (Map.Entry<K, V> entry : list)
         {
             result.put( entry.getKey(), entry.getValue() );
