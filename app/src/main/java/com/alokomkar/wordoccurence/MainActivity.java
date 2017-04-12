@@ -1,9 +1,11 @@
 package com.alokomkar.wordoccurence;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -13,11 +15,14 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,11 +59,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openFileIntent() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("text/plain");
-        startActivityForResult(Intent.createChooser(intent,
-                "Load a file from directory"), REQUEST_CODE_SEARCH);
+
+        if( FileUtils.checkSelfPermission(this,
+                new String[]{
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE})) {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("text/plain");
+            startActivityForResult(Intent.createChooser(intent,
+                    "Load a file from directory"), REQUEST_CODE_SEARCH);
+        }
     }
 
     @Override
@@ -91,11 +102,13 @@ public class MainActivity extends AppCompatActivity {
                 wordCountMap.clear();
                 Uri uri = data.getData();
                 if( uri != null ) {
+
                     Log.d(TAG, "File Uri : " +  uri.getEncodedPath() + " Path "+ uri.getPath());
                     String filepath = FileUtils.getPath(MainActivity.this, uri);
                     Log.d(TAG, "File path : " + filepath);
-                    File file = new File(filepath);
-                    BufferedReader br = new BufferedReader(new FileReader(file));
+                    InputStream fis = new FileInputStream(filepath);
+                    InputStreamReader isr = new InputStreamReader(fis, Charset.forName("UTF-8"));
+                    BufferedReader br = new BufferedReader(isr);
                     String line;
                     while ((line = br.readLine()) != null) {
                         Log.d(TAG, "Reading line : " + line);
@@ -111,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 // Rest of code that converts txt file's content into arraylist
             } catch (IOException e) {
+                e.printStackTrace();
                 // Codes that handles IOException
                 progressDialog.dismiss();
             }
@@ -122,6 +136,22 @@ public class MainActivity extends AppCompatActivity {
     private void setupRecyclerView() {
         occurenceRecyclerView.setAdapter(new OccurrenceRecyclerAdapter(wordCountMap));
         progressDialog.dismiss();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == FileUtils.PERMISSION_REQUEST) {
+            if (FileUtils.checkDeniedPermissions(MainActivity.this, permissions).length == 0) {
+                openFileIntent();
+            } else {
+                if (permissions.length == 3) {
+                    Toast.makeText(MainActivity.this, "Some permissions were denied", Toast.LENGTH_SHORT).show();
+                }
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
 
