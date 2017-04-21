@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -102,16 +104,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if( requestCode == REQUEST_CODE_SEARCH && resultCode == RESULT_OK ) {
-            try {
-                progressDialog.show();
-                wordCountMap.clear();
-                Uri uri = data.getData();
-                if( uri != null ) {
+            wordCountMap.clear();
+            Uri uri = data.getData();
+            if( uri != null ) {
+                Log.d(TAG, "File Uri : " +  uri.getEncodedPath() + " Path "+ uri.getPath());
+                String filepath = FileUtils.getPath(MainActivity.this, uri);
+                executeTask(filepath);
+            }
+        }
+        else
+            super.onActivityResult(requestCode, resultCode, data);
+    }
 
-                    Log.d(TAG, "File Uri : " +  uri.getEncodedPath() + " Path "+ uri.getPath());
-                    String filepath = FileUtils.getPath(MainActivity.this, uri);
-                    Log.d(TAG, "File path : " + filepath);
-                    InputStream fis = new FileInputStream(filepath);
+    private void executeTask(final String filepath) {
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+                Log.d(TAG, "File path : " + filepath);
+                InputStream fis = null;
+                try {
+                    fis = new FileInputStream(filepath);
                     InputStreamReader isr = new InputStreamReader(fis, Charset.forName("UTF-8"));
                     BufferedReader br = new BufferedReader(isr);
                     String line;
@@ -120,25 +133,32 @@ public class MainActivity extends AppCompatActivity {
                         completeLine += line.trim() + " ";
                     }
                     calculateWordCount( completeLine );
-                    if( wordCountMap.size() > 0 ) {
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-                        wordCountMap = FileUtils.sortByValue(wordCountMap);
-                        Log.d(TAG, "Word Count Sorted : " + wordCountMap);
-                        setupRecyclerView();
-                    }
-                }
-                else {
-                    progressDialog.dismiss();
-                }
-                // Rest of code that converts txt file's content into arraylist
-            } catch (IOException e) {
-                e.printStackTrace();
-                // Codes that handles IOException
-                progressDialog.dismiss();
+                return null;
             }
-        }
-        else
-            super.onActivityResult(requestCode, resultCode, data);
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressDialog.show();
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                progressDialog.dismiss();
+                if( wordCountMap.size() > 0 ) {
+                    wordCountMap = FileUtils.sortByValue(wordCountMap);
+                    Log.d(TAG, "Word Count Sorted : " + wordCountMap);
+                    setupRecyclerView();
+                }
+            }
+        }.execute();
     }
 
     private void setupRecyclerView() {
